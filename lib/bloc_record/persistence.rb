@@ -29,6 +29,10 @@ module Persistence
      true
    end
 
+   def self.included(base)
+     base.extend(ClassMethods)
+   end
+
   module ClassMethods
     def create(attrs)
       attrs = BlocRecord::Utility.converted_keys(attrs)
@@ -40,7 +44,7 @@ module Persistence
         VALUES (#{vals.join ","});
       SQL
 
-      data = Hash[attributes.zip attrs.vals]
+      data = Hash[attributes.zip attrs.values]
       data["id"] = connection.execute("SELECT last_insert_rowid();")[0][0]
       new(data)
     end

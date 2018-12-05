@@ -18,7 +18,7 @@ module Schema
   end
 
   def columns
-    @schema.keys
+    schema.keys
   end
 
   def attributes
