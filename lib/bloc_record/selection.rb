@@ -6,21 +6,25 @@ module Selection
 
     if ids.length == 1
       find_one(ids.first)
-    else
+    elsif ids.all? {|i| i.is_a?(Integer) }
       rows.execute <<-SQL
         SELECT #{columns.join ","} FROM #{table} WHERE id IN (#{ids.join(",")});
       SQL
 
       rows_to_array(row)
+    else
+      raise TypeError, "Arguments must all be of type integer"
     end
   end
 
   def find_one(id)
-    row = connection.get_first_row <<-SQL
-      SELECT #{columns.join ","} FROM #{table} WHERE id = #{id};
-    SQL
-
-    init_object_from_row(row)
+    if id.is_a? Integer
+      row = connection.get_first_row <<-SQL
+        SELECT #{columns.join ","} FROM #{table} WHERE id = #{id};
+      SQL
+      init_object_from_row(row)
+    else
+      raise TypeError, "Argument must be of type integer"
   end
 
   def find_by(attribute, value)
@@ -30,6 +34,9 @@ module Selection
     SQL
 
     rows_to_array(rows)
+  end
+
+  def find_each
   end
 
   def take_one
@@ -74,6 +81,15 @@ module Selection
     SQL
 
     rows_to_array(rows)
+  end
+
+  def method_missing(m, *args)
+    if m.to_s.include?("find_by_")
+      attr = m.to_s.gsub!(/find_by_/, "")
+      find_by(attr, args[0])
+    else
+      raise NoMethodError, "NoMethod \"#{m}\""
+    end
   end
 
   private
