@@ -6,7 +6,7 @@ module Selection
 
     if ids.length == 1
       find_one(ids.first)
-    elsif ids.all? {|i| i.is_a?(Integer) }
+    elsif ids.all? {|i| i.is_a?(Integer) && i >= 0 }
       rows.execute <<-SQL
         SELECT #{columns.join ","} FROM #{table} WHERE id IN (#{ids.join(",")});
       SQL
@@ -18,7 +18,7 @@ module Selection
   end
 
   def find_one(id)
-    if id.is_a? Integer
+    if id.is_a?(Integer) && id >= 0
       row = connection.get_first_row <<-SQL
         SELECT #{columns.join ","} FROM #{table} WHERE id = #{id};
       SQL
@@ -36,7 +36,27 @@ module Selection
     rows_to_array(rows)
   end
 
-  def find_each
+  def find_each(start: nil, batch_size: nil)
+    if start.nil?
+      rows = connection.execute <<-SQL
+        SELECT #{columns.join ","} FROM #{table};
+      SQL
+    else
+      rows = connection.execute <<-SQL
+        SELECT #{columns.join ","} FROM #{table} WHERE id BETWEEN #{start} AND #{batch_size};
+      SQL
+    end
+    yield rows_to_array(rows)
+  end
+
+  def find_in_batches(options={})
+    # rows = connection.execute <<-SQL
+    #   SELECT #{columns.join ","} FROM #{table} WHERE id BETWEEN #{start} AND #{batch_size};
+    # SQL
+    # yield rows_to_array(rows)
+    relation = self
+    start = options[:start]
+    batch_size = options[:batch_size]
   end
 
   def take_one
