@@ -139,7 +139,7 @@ module Selection
       when Hash
         join_array = args.first.flatten
         rows = connection.execute <<-SQL
-          SELECT * FROM #{table} INNER JOIN #{join_array[0]} ON #{join_array[0]}.#{table}_id = #{table}.id INNER JOIN #{join_array[1]} ON #{join_array[1]}.#{join_array[0]}_id = #{join_array[0]}.id
+          SELECT * FROM #{table} INNER JOIN #{join_array[0]} ON #{join_array[0]}.#{table}_id = #{table}.id INNER JOIN #{join_array[1]} ON #{join_array[1]}.#{join_array[0]}_id = #{join_array[0]}.id;
         SQL
       end
     end
