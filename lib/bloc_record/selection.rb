@@ -99,26 +99,27 @@ module Selection
   end
 
   def order(*args)
-    if args.count > 1
-      order = []
+    if args.count > 1 || args.first.class == Hash
+      order_arr = []
       args.each do |item|
         case item
           when String, Symbol
-            order << item
+            order_arr << item
           when Hash
-            item.map {|k, v| order.push("#{k} #{v.upcase}")}
+            item.map {|k, v| order_arr.push("#{k} #{v.upcase}")}
         end
       end
-    order = order.join(",")
+      order = order_arr.join(",")
     else
-      order = order.to_s
+      order = args.first.to_s
     end
 
     rows = connection.execute <<-SQL
-      SELECT * FROM #{table} ORDER BY #{order};
+      SELECT * FROM #{table}
+      ORDER BY #{order};
     SQL
     rows_to_array(rows)
-  end
+   end
 
   def join(*args)
     if args.count > 1
