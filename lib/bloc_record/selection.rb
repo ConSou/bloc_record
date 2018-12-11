@@ -43,20 +43,20 @@ module Selection
       SQL
     else
       rows = connection.execute <<-SQL
-        SELECT #{columns.join ","} FROM #{table} WHERE id BETWEEN #{start} AND #{batch_size};
+        SELECT #{columns.join ","} FROM #{table} ORDER BY id LIMIT #{batch_size} OFFSET #{start};
       SQL
     end
     yield rows_to_array(rows)
   end
 
   def find_in_batches(options={})
-    # rows = connection.execute <<-SQL
-    #   SELECT #{columns.join ","} FROM #{table} WHERE id BETWEEN #{start} AND #{batch_size};
-    # SQL
-    # yield rows_to_array(rows)
-    relation = self
     start = options[:start]
     batch_size = options[:batch_size]
+
+    rows = connection.execute <<-SQL
+      SELECT #{columns.join ","} FROM #{table} ORDER BY id LIMIT #{batch_size} OFFSET #{start};
+    SQL
+    yield rows
   end
 
   def take_one
