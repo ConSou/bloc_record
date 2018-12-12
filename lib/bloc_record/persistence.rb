@@ -38,7 +38,19 @@ module Persistence
    end
 
    def update_attributes(updates)
+     if updates.class != Hash
+       raise TypeError, "arguments must be a hash"
+     end
      self.class.update(self.id, updates)
+   end
+
+   def method_missing(m, *args)
+     if m.to_s.include?("update_")
+       attr = m.to_s.gsub!(/update_/, "")
+       self.update_attribute(attr, args[0])
+     else
+       raise NoMethodError, "NoMethod \"#{m}\""
+     end
    end
 
   module ClassMethods
@@ -58,17 +70,28 @@ module Persistence
       new(data)
     end
 
-    def update(id, updates)
-      updates = BlocRecord::Utility.converted_keys(updates)
-      updates.delete "id"
-      updates_array = updates.map {|key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}" }
+    def update(ids, updates)
+      if ids.nil? || ids.class == Integer || ids.class == Array
+        if ids.class == Array && !ids.all? {|i| i.is_a?(Integer) }
+          raise TypeError, "Argument must be an array or integers or a single integer"
+        end
+        updates = BlocRecord::Utility.converted_keys(updates)
+        updates.delete "id"
+        updates_array = updates.map {|key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}" }
 
-      where_clause = id.nil? ? ";" : "WHERE id = #{id};"
+        if ids.class == Fixnum
+          where_clause = "WHERE id = #{ids};"
+        elsif ids.class == Array
+          where_clause = ids.empty? ? ";" : "WHERE id IN (#{ids.join(",")});"
+        else
+          where_clause = ";"
+        end
 
-      connection.execute <<-SQL
-        UPDATE #{table} SET #{updates_array * ","} #{where_clause}
-      SQL
-      true
+        connection.execute <<-SQL
+          UPDATE #{table} SET #{updates_array * ","} #{where_clause}
+        SQL
+        true
+      end
     end
 
     def update_all(updates)
